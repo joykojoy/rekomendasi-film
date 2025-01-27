@@ -1,0 +1,17 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.pagination {
+    justify-content: center;
+    margin-top: 20px;
+}
+
+.pagination .page-link {
+    color: #fff;
+    background-color: #333;
+}
+
+.pagination .page-link:hover {
+    background-color: #555;
+}

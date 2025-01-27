@@ -1,0 +1,32 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom CSS Styling */
+body {
+    @apply bg-gray-100 text-gray-900; /* Tailwind classes */
+}
+
+.card {
+    @apply rounded-lg shadow-lg transition-transform duration-200; /* Smooth hover effect */
+}
+
+.card:hover {
+    @apply scale-105; /* Slightly enlarge on hover */
+}
+
+.table {
+    margin-top: 20px; /* Additional custom styling */
+}
+
+.table th, .table td {
+    @apply p-4 text-left; /* Tailwind classes for padding */
+}
+
+.table-striped tbody tr:nth-of-type(odd) {
+    background-color: #f2f2f2; /* Custom row striping */
+}
+
+.btn-primary {
+    @apply bg-blue-500 text-white rounded px-4 py-2 hover:bg-blue-700; /* Tailwind buttons */
+}
