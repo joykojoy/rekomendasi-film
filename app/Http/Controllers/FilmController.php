@@ -46,30 +46,74 @@ class FilmController extends Controller
         return view('top-picks', compact('films'));
     }
 
+
     public function newforyou()
     {
-        if (!Auth::check()) {
-            return redirect()->route('login')->with('error', 'Please login to see personalized recommendations.');
+        $userId = Auth::id();
+    
+        if (!$userId) {
+            return redirect()->route('login')
+                ->with('error', 'Please login to see personalized recommendations.');
         }
     
         try {
-            $userId = Auth::id();
-            $recommendations = HybridFill::where('user_id', $userId)
-                ->whereBetween('score', [0.4, 0.7])
-                ->orderBy('score', 'desc')
-                ->with('film')
-                ->get();
+            // Dapatkan rekomendasi dari service
+            $recommendationResults = $this->recommendationService->getRecommendationsWithScores($userId);
+            $recommendedFilms = $recommendationResults['films'];
+            $hybridScores = $recommendationResults['scores'];
     
-            $films = $recommendations->map(fn($hybrid) => $hybrid->film);
-            return view('films.newforyou', compact('recommendations'));
+            // Jika tidak ada rekomendasi, gunakan film dengan rating tertinggi
+            if ($recommendedFilms->isEmpty()) {
+                $recommendedFilms = Film::orderBy('rating', 'desc')->take(200)->get();
+                $hybridScores = $recommendedFilms->mapWithKeys(fn($film) => [$film->id => $film->rating]);
+            }
+    
+            // Simpan data ke hybridfill untuk referensi
+            try {
+                HybridFill::where('user_id', $userId)->delete();
+                $hybridFillData = [];
+                foreach ($hybridScores as $filmId => $score) {
+                    $hybridFillData[] = [
+                        'user_id' => $userId,
+                        'film_id' => $filmId,
+                        'score' => $score,
+                        'created_at' => now(),
+                        'updated_at' => now()
+                    ];
+                }
+                HybridFill::insert($hybridFillData);
+            } catch (\Exception $saveError) {
+                Log::error('Failed to save hybrid recommendations', [
+                    'user_id' => $userId,
+                    'error' => $saveError->getMessage()
+                ]);
+            }
+    
+            // Kirim data langsung ke view seperti di getRecommendations
+            return view('films.newforyou', [
+                'recommendedFilms' => $recommendedFilms,
+                'hybridScores' => $hybridScores,
+                'userRatings' => UserRating::where('user_id', $userId)->count()
+            ]);
+    
         } catch (\Exception $e) {
             Log::error('Failed to retrieve new-for-you recommendations', [
-                'user_id' => Auth::id(),
-                'error' => $e->getMessage(),
+                'user_id' => $userId,
+                'error' => $e->getMessage()
             ]);
-            return back()->with('error', 'Unable to fetch recommendations. Please try again later.');
+    
+            // Fallback ke film terbaru jika terjadi error
+            $recommendedFilms = Film::latest()->take(20)->get();
+            $hybridScores = $recommendedFilms->mapWithKeys(fn($film) => [$film->id => $film->rating]);
+    
+            return view('films.newforyou', [
+                'recommendedFilms' => $recommendedFilms,
+                'hybridScores' => $hybridScores,
+                'error' => 'Unable to generate personalized recommendations. Showing latest films.'
+            ]);
         }
     }
+    
     
     public function getRecommendations(Request $request, $userId = null)
     {

@@ -55,7 +55,7 @@ Route::middleware(['auth'])->group(function () {
 
     // Routes to get recommendations based on userId
     Route::get('/recommendations/{userId}', [FilmController::class, 'getRecommendations'])->name('films.recommendations');
-    Route::get('/newforyou', [FilmController::class, 'newforyou'])->name('films.newforyou');
+
 });
 
 // Public routes
@@ -64,4 +64,5 @@ Route::get('/recommendations', [FilmController::class, 'getRecommendations'])->n
 Route::get('/films', [FilmController::class, 'index'])->name('films.index');
 Route::get('/films/advance-search', [FilmController::class, 'advanceSearch'])->name('films.advance-search');
 Route::get('/films/{id}', [FilmController::class, 'show'])->name('films.show');
+Route::get('/newforyou', [FilmController::class, 'newforyou'])->name('films.newforyou');
 require __DIR__ . '/auth.php';
