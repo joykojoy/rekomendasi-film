@@ -8,6 +8,8 @@ use App\Models\HybridFill;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+
 
 class FilmController extends Controller
 {
@@ -47,6 +49,7 @@ class FilmController extends Controller
     }
 
 
+    
     public function newforyou()
     {
         $userId = Auth::id();
@@ -57,43 +60,32 @@ class FilmController extends Controller
         }
     
         try {
-            // Dapatkan rekomendasi dari service
-            $recommendationResults = $this->recommendationService->getRecommendationsWithScores($userId);
-            $recommendedFilms = $recommendationResults['films'];
-            $hybridScores = $recommendationResults['scores'];
+            // Query SQL untuk mengambil film dengan skor dari hybridfill dan mengurutkan dari terbesar ke terkecil
+            $recommendedFilms = DB::table('films')
+                ->join('hybridfill', 'films.id', '=', 'hybridfill.film_id')
+                ->where('hybridfill.user_id', $userId)
+                ->whereBetween('hybridfill.score', [4, 7])
+                ->select('films.*', 'hybridfill.score')
+                ->orderBy('hybridfill.score', 'DESC') // Mengurutkan dari terbesar ke terkecil
+                ->get();
     
-            // Jika tidak ada rekomendasi, gunakan film dengan rating tertinggi
+            // Debugging: Log hasil query
+            Log::info("Films retrieved for user {$userId}", ['films' => $recommendedFilms]);
+    
+            // Jika tidak ada rekomendasi dalam range, tampilkan pesan yang lebih informatif
             if ($recommendedFilms->isEmpty()) {
-                $recommendedFilms = Film::orderBy('rating', 'desc')->take(200)->get();
-                $hybridScores = $recommendedFilms->mapWithKeys(fn($film) => [$film->id => $film->rating]);
-            }
-    
-            // Simpan data ke hybridfill untuk referensi
-            try {
-                HybridFill::where('user_id', $userId)->delete();
-                $hybridFillData = [];
-                foreach ($hybridScores as $filmId => $score) {
-                    $hybridFillData[] = [
-                        'user_id' => $userId,
-                        'film_id' => $filmId,
-                        'score' => $score,
-                        'created_at' => now(),
-                        'updated_at' => now()
-                    ];
-                }
-                HybridFill::insert($hybridFillData);
-            } catch (\Exception $saveError) {
-                Log::error('Failed to save hybrid recommendations', [
-                    'user_id' => $userId,
-                    'error' => $saveError->getMessage()
+                return view('films.newforyou', [
+                    'recommendedFilms' => collect(),
+                    'hybridScores' => [],
+                    'userRatings' => UserRating::where('user_id', $userId)->count(),
+                    'error' => 'No films found with scores between 4 and 7.',
                 ]);
             }
     
-            // Kirim data langsung ke view seperti di getRecommendations
             return view('films.newforyou', [
                 'recommendedFilms' => $recommendedFilms,
-                'hybridScores' => $hybridScores,
-                'userRatings' => UserRating::where('user_id', $userId)->count()
+                'hybridScores' => $recommendedFilms->pluck('score', 'id'),
+                'userRatings' => UserRating::where('user_id', $userId)->count(),
             ]);
     
         } catch (\Exception $e) {
@@ -102,17 +94,14 @@ class FilmController extends Controller
                 'error' => $e->getMessage()
             ]);
     
-            // Fallback ke film terbaru jika terjadi error
-            $recommendedFilms = Film::latest()->take(20)->get();
-            $hybridScores = $recommendedFilms->mapWithKeys(fn($film) => [$film->id => $film->rating]);
-    
             return view('films.newforyou', [
-                'recommendedFilms' => $recommendedFilms,
-                'hybridScores' => $hybridScores,
-                'error' => 'Unable to generate personalized recommendations. Showing latest films.'
+                'recommendedFilms' => collect(),
+                'hybridScores' => [],
+                'error' => 'Unable to generate personalized recommendations.'
             ]);
         }
     }
+    
     
     
     public function getRecommendations(Request $request, $userId = null)
