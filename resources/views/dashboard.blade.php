@@ -3,6 +3,7 @@
 @section('title', 'Dashboard')
 
 @section('content')
+<link rel="stylesheet" href="{{ asset('css/dashboard.css') }}">
 <div class="container">
     <!-- Top Picks Section -->
     <h2 class="text-warning mb-4">What to Watch</h2>
@@ -58,69 +59,6 @@
 </div>
 
 <style>
-    .image-container {
-        position: relative;
-        width: 100%;
-        padding-bottom: 150%; /* 2:3 aspect ratio */
-        background-color: #333; /* Fallback background */
-    }
-
-    .image-container img {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        object-fit: cover; /* Ensures the image covers the entire container */
-    }
-
-    .card-body {
-        padding: 1rem;
-    }
-
-    /* Custom button styles */
-    .custom-btn {
-        padding: 0.375rem 1rem; /* Smaller padding to fit better */
-        font-size: 0.75rem; /* Slightly smaller font for better alignment */
-        border-radius: 20px; /* Rounded corners for a modern look */
-        transition: all 0.3s ease-in-out; /* Smooth transition for hover effects */
-    }
-
-    /* Button hover effects */
-    .custom-btn:hover {
-        transform: scale(1.05); /* Slightly enlarge on hover */
-        box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2); /* Add subtle shadow on hover */
-    }
-
-    /* Specific button color changes */
-    .btn-outline-primary.custom-btn {
-        border-color: #007bff;
-        color: #007bff;
-    }
-
-    .btn-outline-primary.custom-btn:hover {
-        background-color: #007bff;
-        color: white;
-    }
-
-    .btn-outline-light.custom-btn {
-        border-color: #ffffff;
-        color: #ffffff;
-    }
-
-    .btn-outline-light.custom-btn:hover {
-        background-color: #ffffff;
-        color: #000000;
-    }
-
-    /* Optional: Adjust spacing between card elements for a tidier layout */
-    .card-body {
-        padding-bottom: 1.25rem;
-    }
-
-    /* Remove underline from links */
-    a.text-decoration-none {
-        color: inherit;
-    }
+    
 </style>
 @endsection

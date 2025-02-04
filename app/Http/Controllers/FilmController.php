@@ -22,21 +22,21 @@ class FilmController extends Controller
 
     public function dashboard()
     {
-        $topPicks = Film::orderBy('rating', 'desc')->take(6)->get();
+        $topPicks = Film::orderBy('rating', 'desc')->take(5)->get();
 
         if (Auth::check()) {
             try {
                 $recommendations = $this->recommendationService->getRecommendations(Auth::id());
-                $recommendations = $recommendations->take(6);
+                $recommendations = $recommendations->take(5);
             } catch (\Exception $e) {
                 Log::error('Dashboard recommendation error', [
                     'user_id' => Auth::id(),
                     'error' => $e->getMessage()
                 ]);
-                $recommendations = Film::latest()->take(6)->get();
+                $recommendations = Film::latest()->take(5)->get();
             }
         } else {
-            $recommendations = Film::latest()->take(6)->get();
+            $recommendations = Film::latest()->take(5)->get();
         }
 
         return view('dashboard', compact('topPicks', 'recommendations'));
@@ -193,34 +193,58 @@ class FilmController extends Controller
 
         return view('films.show', compact('film', 'comments', 'similarFilms'));
     }
-    
     public function advanceSearch(Request $request)
-    {
-        $query = Film::query();
+{
+    $query = Film::query();
 
-        if ($request->has('search')) {
-            $query->where('title', 'like', '%' . $request->input('search') . '%')
-                  ->orWhere('description', 'like', '%' . $request->input('search') . '%')
-                  ->orWhere('genre', 'like', '%' . $request->input('search') . '%')
-                  ->orWhere('sinopsis', 'like', '%' . $request->input('search') . '%');
-        }
-
-        if ($request->has('sort_by_update')) {
-            $query->orderBy('updated_at', $request->input('sort_by_update') == 'desc' ? 'desc' : 'asc');
-        }
-
-        if ($request->has('sort_by_rating')) {
-            $query->orderBy('rating', $request->input('sort_by_rating') == 'desc' ? 'desc' : 'asc');
-        }
-
-        if ($request->has('sort_by_relevance')) {
-            $query->orderByRaw("MATCH (title, description, genre, sinopsis) AGAINST (?)", [$request->input('search')]);
-        }
-
-        $films = $query->paginate(10);
-
-        return view('films.advance-search', compact('films'));
+    if ($request->has('search')) {
+        $query->where(function ($q) use ($request) {
+            $q->where('title', 'like', '%' . $request->input('search') . '%')
+              ->orWhere('description', 'like', '%' . $request->input('search') . '%')
+              ->orWhere('sinopsis', 'like', '%' . $request->input('search') . '%');
+        });
     }
+
+    if ($request->has('genre') && !empty($request->input('genre'))) {
+        $genre = $request->input('genre');
+        $query->whereRaw("FIND_IN_SET(?, genre)", [$genre]);
+    }
+
+    if ($request->has('sort_by_update')) {
+        $query->orderBy('updated_at', $request->input('sort_by_update') == 'desc' ? 'desc' : 'asc');
+    }
+
+    if ($request->has('sort_by_rating')) {
+        $query->orderBy('rating', $request->input('sort_by_rating') == 'desc' ? 'desc' : 'asc');
+    }
+
+    if ($request->has('sort_by_genre')) {
+        $query->orderBy('genre', $request->input('sort_by_genre') == 'desc' ? 'desc' : 'asc');
+    }
+
+    $films = $query->paginate(14);
+
+    // Mengambil semua genre, memisahkan, dan menghilangkan duplikasi
+    $allGenres = Film::pluck('genre')->toArray();
+    $genres = [];
+
+    foreach ($allGenres as $genreString) {
+        $separatedGenres = explode(',', $genreString);
+        foreach ($separatedGenres as $genre) {
+            $trimmedGenre = trim($genre);
+            if (!in_array($trimmedGenre, $genres)) {
+                $genres[] = $trimmedGenre;
+            }
+        }
+    }
+
+    sort($genres); // Urutkan genre secara alfabetis
+
+    return view('films.advance-search', compact('films', 'genres'));
+}
+
+      
+    
 
     public function storeRating(Request $request, $id)
     {

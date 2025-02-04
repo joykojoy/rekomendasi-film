@@ -33,9 +33,15 @@
                     <a href="{{ route('films.display', ['id' => $film->id]) }}" class="group">
                         <div class="bg-gray-800 rounded-lg overflow-hidden shadow-lg hover:shadow-2xl transition-shadow duration-300">
                             <!-- Image Section -->
-                            <img src="{{ isset($film->gambar) ? asset('storage/' . $film->gambar) : 'https://via.placeholder.com/300x450' }}" 
-                                 class="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-300" 
-                                 alt="{{ $film->title ?? 'Unknown Title' }}">
+                            <div class="w-full h-64 relative">
+                                <img src="{{ isset($film->gambar) ? asset('storage/' . $film->gambar) : 'https://via.placeholder.com/300x450' }}" 
+                                     class="w-full h-64 object-cover object-center group-hover:scale-105 transition-transform duration-300" 
+                                     alt="{{ $film->title ?? 'Unknown Title' }}"
+                                     onerror="this.onerror=null; this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iNDUwIiB2aWV3Qm94PSIwIDAgMzAwIDQ1MCIgZmlsbD0iIzMzMyI+CiAgPHJlY3Qgd2lkdGg9IjMwMCIgaGVpZ2h0PSI0NTAiIGZpbGw9IiMzMzMiLz4KICA8dGV4dCB4PSI1MCUiIHk9IjUwJSIgZm9udC1zaXplPSIxNiIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmaWxsPSIjZmZmIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5ObyBJbWFnZTwvdGV4dD4KPC9zdmc+';">
+                                <div class="absolute inset-0 flex items-center justify-center bg-gray-700 text-gray-400 text-lg" style="display: none;" id="no-image-{{ $film->id }}">
+                                    No Image
+                                </div>
+                            </div>
 
                             <div class="p-4">
                                 <!-- Film Title -->
@@ -75,6 +81,18 @@
     <footer class="bg-gray-800 text-gray-400 text-center py-4 mt-8">
         <p>&copy; {{ date('Y') }} Film Recommendations. All rights reserved.</p>
     </footer>
+
+    <script>
+        // Script untuk menangani kesalahan gambar
+        document.querySelectorAll('img').forEach(img => {
+            img.addEventListener('error', function() {
+                const noImageDiv = this.parentElement.querySelector('div[id^="no-image-"]');
+                if (noImageDiv) {
+                    noImageDiv.style.display = 'flex';
+                }
+            });
+        });
+    </script>
 </body>
 </html>
 @endsection
