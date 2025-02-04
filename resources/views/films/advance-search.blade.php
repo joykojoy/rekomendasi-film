@@ -1,4 +1,3 @@
-@extends('layout')
 <link rel="stylesheet" href="{{ asset('css/advance-search.css') }}">
 
 <div class="advance-search-page">
