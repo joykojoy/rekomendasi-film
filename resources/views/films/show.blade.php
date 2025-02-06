@@ -26,7 +26,7 @@
                 <p><strong>Sinopsis:</strong></p>
                 <p class="text-justify synopsis">{{ $film->sinopsis }}</p>
                 <div class="mt-4">
-                    <a href="{{ route('films.index') }}" class="btn btn-secondary">Back to Film List</a>
+                <a href="{{ url()->previous() }}" class="btn btn-secondary">Back to Previous Page</a>
                     @auth
                         @if(auth()->user()->isAdmin ?? false)
                             <a href="{{ route('films.edit', $film->id) }}" class="btn btn-warning">Edit</a>
@@ -35,10 +35,43 @@
                 </div>
             </div>
         </div>
+        @auth
+            <div class="mt-6">
+                <h3 class="mb-4 text-lg font-semibold text-gray-8000">Leave a Comment</h3>
+                <form id="ratingForm" method="POST" action="{{ route('films.rating', $film->id) }}" class="space-y-4">
+                    @csrf
+                    <div>
+                        <label for="rating" class="block text-sm font-medium text-gray-8000">Rating</label>
+                        <select name="rating" id="rating" class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-black" required>
+                            <option value="">Select a Rating</option>
+                            @for($i = 1; $i <= 10; $i++)
+                                <option value="{{ $i }}" class="text-black">{{ $i }} ⭐</option>
+                            @endfor
+                        </select>
+                        <div class="mt-1 text-white text-red-500">Please select a rating.</div>
+                    </div>
 
+                    <div>
+                        <label for="comment" class="block text-sm font-medium text-gray-8000">Comment</label>
+                        <textarea name="comment" id="comment" rows="3" class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-black" placeholder="Write your comment..." required minlength="3"></textarea>
+                        <div class="mt-1 text-xs text-red-500">Please enter a comment (minimum 3 characters).</div>
+                    </div>
+
+                    <button type="submit" class="w-full px-4 py-2 text-white bg-blue-600 rounded-md shadow hover:bg-blue-500">
+                        Submit Comment
+                    </button>
+                </form>
+            </div>
+        @else
+            <div class="mt-6 p-4 bg-blue-100 rounded-md">
+                <p class="text-sm text-blue-700">
+                    Please <a href="{{ route('login') }}" class="font-medium text-blue-600 hover:underline">login</a> to leave a comment.
+                </p>
+            </div>
+        @endauth
         <!-- Bagian Komentar -->
         <div class="mt-5">
-            <h3 class="mb-3 text-lg font-semibold text-gray-800">Comments</h3>
+            <h3 class="mb-3 text-lg font-semibold text-gray-8000">Comments</h3>
             <div id="comments-container">
                 @foreach ($comments as $comment)
                     <div class="mb-4 p-4 bg-white rounded-2xl shadow-md">
@@ -56,43 +89,9 @@
                 @endforeach
             </div>
         </div>
-
+</div>
         <!-- Form Komentar -->
-        @auth
-            <div class="mt-6">
-                <h3 class="mb-4 text-lg font-semibold text-gray-800">Leave a Comment</h3>
-                <form id="ratingForm" method="POST" action="{{ route('films.rating', $film->id) }}" class="space-y-4">
-                    @csrf
-                    <div>
-                        <label for="rating" class="block text-sm font-medium text-gray-800">Rating</label>
-                        <select name="rating" id="rating" class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm" required>
-                            <option value="">Select a Rating</option>
-                            @for($i = 1; $i <= 10; $i++)
-                                <option value="{{ $i }}" class="text-black">{{ $i }} ⭐</option>
-                            @endfor
-                        </select>
-                        <div class="mt-1 text-black text-red-500">Please select a rating.</div>
-                    </div>
-
-                    <div>
-                        <label for="comment" class="block text-sm font-medium text-gray-800">Comment</label>
-                        <textarea name="comment" id="comment" rows="3" class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="Write your comment..." required minlength="3"></textarea>
-                        <div class="mt-1 text-xs text-red-500">Please enter a comment (minimum 3 characters).</div>
-                    </div>
-
-                    <button type="submit" class="w-full px-4 py-2 text-white bg-blue-600 rounded-md shadow hover:bg-blue-500">
-                        Submit Comment
-                    </button>
-                </form>
-            </div>
-        @else
-            <div class="mt-6 p-4 bg-blue-100 rounded-md">
-                <p class="text-sm text-blue-700">
-                    Please <a href="{{ route('login') }}" class="font-medium text-blue-600 hover:underline">login</a> to leave a comment.
-                </p>
-            </div>
-        @endauth
-    </div>
+       
 @endsection
 
 @section('scripts')

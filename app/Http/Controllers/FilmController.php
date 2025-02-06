@@ -22,32 +22,46 @@ class FilmController extends Controller
 
     public function dashboard()
     {
+        // Ambil top picks berdasarkan rating tertinggi
         $topPicks = Film::orderBy('rating', 'desc')->take(5)->get();
-
+    
+        // Ambil recommendations (menggunakan service atau fallback ke film terbaru)
         if (Auth::check()) {
             try {
-                $recommendations = $this->recommendationService->getRecommendations(Auth::id());
-                $recommendations = $recommendations->take(5);
+                $recommendations = $this->recommendationService
+                                        ->getRecommendations(Auth::id())
+                                        ->take(5);
             } catch (\Exception $e) {
                 Log::error('Dashboard recommendation error', [
                     'user_id' => Auth::id(),
-                    'error' => $e->getMessage()
+                    'error'   => $e->getMessage()
                 ]);
                 $recommendations = Film::latest()->take(5)->get();
             }
         } else {
             $recommendations = Film::latest()->take(5)->get();
         }
-
-        return view('dashboard', compact('topPicks', 'recommendations'));
+    
+        // Bagian "New For You" dengan menggunakan join ke tabel hybridfill
+        // Mengambil film dengan hybridfill.score antara 4 dan 7 untuk user yang sedang login
+        $userId = Auth::id();
+        $newForYou = DB::table('films')
+            ->join('hybridfill', 'films.id', '=', 'hybridfill.film_id')
+            ->where('hybridfill.user_id', $userId)
+            ->whereBetween('hybridfill.score', [4, 7])
+            ->select('films.*', 'hybridfill.score')
+            ->orderBy('hybridfill.score', 'DESC')
+            ->take(5)
+            ->get();
+    
+        return view('dashboard', compact('topPicks', 'recommendations', 'newForYou'));
     }
     
-    public function topPicks()
-    {
-        $films = Film::orderBy('rating', 'desc')->take(12)->get();
-        return view('top-picks', compact('films'));
-    }
-
+public function topPicks()
+{
+    $films = Film::orderby('rating', 'desc')->take(12)->get();
+    return view('top-picks', compact('films'));
+}
 
     
     public function newforyou()
@@ -222,7 +236,7 @@ class FilmController extends Controller
         $query->orderBy('genre', $request->input('sort_by_genre') == 'desc' ? 'desc' : 'asc');
     }
 
-    $films = $query->paginate(14);
+    $films = $query->paginate(12);
 
     // Mengambil semua genre, memisahkan, dan menghilangkan duplikasi
     $allGenres = Film::pluck('genre')->toArray();

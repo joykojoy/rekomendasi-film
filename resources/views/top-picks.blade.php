@@ -1,114 +1,57 @@
+@extends('layout')
+
+@section('content')
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Top Picks</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        body {
-            background-color: #121212;
-            color: #ffffff;
-            font-family: 'Arial', sans-serif;
-        }
-        .card {
-            border-radius: 10px;
-            overflow: hidden;
-        }
-        .card img {
-            height: 200px;
-            object-fit: cover;
-        }
-        .card-title {
-            font-size: 1rem;
-            font-weight: bold;
-        }
-        .btn-outline-primary, .btn-outline-light {
-            border-radius: 5px;
-        }
-        .btn-outline-primary:hover {
-            background-color: #007bff;
-            color: #fff;
-        }
-        .btn-outline-light:hover {
-            background-color: #fff;
-            color: #121212;
-        }
-        .sidebar {
-            background-color: #1f1f1f;
-            min-height: 100vh;
-            padding: 1rem;
-            position: sticky;
-            top: 0;
-        }
-        .sidebar a {
-            text-decoration: none;
-            color: #ffffff;
-            font-weight: bold;
-            padding: 0.5rem 0;
-            display: block;
-            transition: color 0.2s;
-        }
-        .sidebar a:hover {
-            color: #007bff;
-        }
-        .content {
-            margin-left: 250px;
-        }
-        @media (max-width: 768px) {
-            .content {
-                margin-left: 0;
-            }
-            .sidebar {
-                position: static;
-                min-height: auto;
-                margin-bottom: 1rem;
-            }
-        }
-    </style>
+    <title>Film Recommendations</title>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-
-<div class="d-flex">
-    <!-- Sidebar -->
-    <div class="sidebar">
-        <h4 class="text-warning">Menu</h4>
-        <a href="#">Home</a>
-        <a href="#">Top Picks</a>
-        <a href="#">Watchlist</a>
-        <a href="#">Genres</a>
-        <a href="#">Profile</a>
-    </div>
-
-    <!-- Main Content -->
-    <div class="content container py-5">
-        <h2 class="text-warning mb-4 text-center">Top Picks</h2>
-        <div class="row row-cols-2 row-cols-sm-3 row-cols-md-4 row-cols-lg-6 g-4">
+<body class="bg-gray-900 text-white font-sans">
+<div class="container mx-auto py-8 px-4">
+    <h2 class="text-yellow-400 text-3xl font-bold mb-6 text-center">Top Picks</h2>
+    
+    @if($films->isEmpty())
+        <p class="text-center text-gray-400">No top picks available.</p>
+    @else
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             @foreach ($films as $film)
-                <div class="col">
-                    <div class="card bg-dark text-white h-100 border-0 shadow-sm">
-                        <!-- Film Image -->
-                        <img src="{{ $film->gambar ? asset('storage/' . $film->gambar) : 'https://via.placeholder.com/200x300' }}" 
-                             class="card-img-top" 
-                             alt="{{ $film->title }}">
-                        <div class="card-body d-flex flex-column p-3">
+                <a href="{{ route('films.display', ['id' => $film->id]) }}" class="group">
+                    <div class="bg-gray-800 rounded-lg overflow-hidden shadow-lg hover:shadow-2xl transition-shadow duration-300">
+                        <!-- Image Section -->
+                        <img 
+                            src="{{ $film->gambar ? asset('storage/' . $film->gambar) : 'https://via.placeholder.com/300x450' }}" 
+                            class="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-300" 
+                            alt="{{ $film->title ?? 'Unknown Title' }}"
+                        >
+                        <div class="p-4">
                             <!-- Film Title -->
-                            <h5 class="card-title text-warning">{{ $film->title }}</h5>
+                            <h5 class="text-lg font-bold text-yellow-400 mb-2">
+                                {{ $film->title ?? 'Untitled' }}
+                            </h5>
                             <!-- Film Rating -->
-                            <p class="card-text mb-3">
-                                <span class="text-warning">&#9733; {{ $film->rating ?? 'N/A' }}</span>
+                            <p class="text-sm mb-1">
+                                <span class="text-yellow-400">&#9733;</span> {{ $film->rating ?? 'N/A' }}
                             </p>
-                            <!-- Action Buttons -->
-                            <a href="#" class="btn btn-sm btn-outline-primary w-100 mb-2">+ Watchlist</a>
-                            <a href="#" class="btn btn-sm btn-outline-light w-100">Trailer</a>
+                            <!-- Film Genre -->
+                            <p class="text-sm text-blue-400">
+                                Genre: {{ $film->genre ?? 'Unknown Genre' }}
+                            </p>
+                            <!-- Film Description -->
+                            <p class="text-sm text-gray-400 mt-2">
+                                {{ Str::limit($film->description ?? 'No description available.', 100) }}
+                            </p>
                         </div>
                     </div>
-                </div>
+                </a>
             @endforeach
         </div>
-    </div>
+    @endif
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+<footer class="bg-gray-800 text-gray-400 text-center py-4 mt-8">
+    <p>&copy; {{ date('Y') }} Film Recommendations. All rights reserved.</p>
+</footer>
+@endsection

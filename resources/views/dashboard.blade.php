@@ -32,6 +32,7 @@
     </div>
 
     <!-- Recommendations Section -->
+    
     <h2 class="text-warning mb-4">Recommended for You</h2>
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h3 class="text-white">Recommendations</h3>
@@ -56,7 +57,38 @@
             </div>
         @endforeach
     </div>
+
+<!-- New For You Section -->
+<h2 class="text-warning mb-4">New For You</h2>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h3 class="text-white">Recommendations</h3>
+    <a href="{{ route('recommendations') }}" class="btn btn-sm btn-outline-primary">Get more recommendations &rarr;</a>
 </div>
+<div class="row">
+    @foreach ($newForYou as $film)
+        <div class="col-md-2 mb-4">
+            <a href="{{ route('films.display', $film->id) }}" class="text-decoration-none">
+                <div class="card bg-dark text-white border-0 shadow">
+                    <div class="image-container">
+                        {{-- Jika gambar belum ada, bisa gunakan gambar default --}}
+                        <img src="{{ $film->gambar ? asset('storage/' . $film->gambar) : asset('images/no-image.jpg') }}" 
+                             class="card-img-top img-fluid rounded" 
+                             alt="{{ $film->title }}">
+                    </div>
+                    <div class="card-body">
+                        <h5 class="card-title text-truncate">{{ $film->title }}</h5>
+                        <p class="card-text mb-2">
+                            <span class="text-warning">
+                                &#9733; Hybrid Score: {{ number_format($film->score, 2) }}
+                            </span>
+                        </p>
+                    </div>
+                </div>
+            </a>
+        </div>
+    @endforeach
+</div>
+
 
 <style>
     
