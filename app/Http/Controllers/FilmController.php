@@ -236,7 +236,7 @@ public function topPicks()
         $query->orderBy('genre', $request->input('sort_by_genre') == 'desc' ? 'desc' : 'asc');
     }
 
-    $films = $query->paginate(12);
+    $films = $query->paginate(14);
 
     // Mengambil semua genre, memisahkan, dan menghilangkan duplikasi
     $allGenres = Film::pluck('genre')->toArray();

@@ -1,7 +1,9 @@
-
 <link rel="stylesheet" href="{{ asset('css/advance-search.css') }}">
 
 <div class="advance-search-page">
+    <!-- Tombol Back -->
+    <button class="back-button" onclick="history.back()">&#x21A9;</button>
+    
     <!-- Bagian Advanced Search Form -->
     <section class="section search-section">
         <div class="search-container">
@@ -112,3 +114,23 @@
         @endif
     </section>
 </div>
+
+<style>
+    .back-button {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        background: #d3d3d3; /* abu-abu cerah */
+        color: #333;
+        border: none;
+        font-size: 24px;
+        padding: 8px 12px;
+        cursor: pointer;
+        border-radius: 5px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .back-button:hover {
+        background: #c0c0c0;
+    }
+</style>
