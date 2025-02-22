@@ -22,38 +22,46 @@ class FilmController extends Controller
 
     public function dashboard()
     {
-        // Ambil top picks berdasarkan rating tertinggi
-        $topPicks = Film::orderBy('rating', 'desc')->take(5)->get();
-    
-        // Ambil recommendations (menggunakan service atau fallback ke film terbaru)
+        // Optimize queries by selecting only needed columns and limiting results
+        $topPicks = Film::select('id', 'title', 'gambar', 'rating')
+                        ->orderBy('rating', 'desc')
+                        ->take(5)
+                        ->get();
+
         if (Auth::check()) {
             try {
                 $recommendations = $this->recommendationService
-                                        ->getRecommendations(Auth::id())
-                                        ->take(5);
+                                     ->getRecommendations(Auth::id())
+                                     ->take(5);
             } catch (\Exception $e) {
                 Log::error('Dashboard recommendation error', [
                     'user_id' => Auth::id(),
                     'error'   => $e->getMessage()
                 ]);
-                $recommendations = Film::latest()->take(5)->get();
+                $recommendations = Film::select('id', 'title', 'gambar')
+                                     ->latest()
+                                     ->take(5)
+                                     ->get();
             }
         } else {
-            $recommendations = Film::latest()->take(5)->get();
+            $recommendations = Film::select('id', 'title', 'gambar')
+                                 ->latest()
+                                 ->take(5)
+                                 ->get();
         }
-    
-        // Bagian "New For You" dengan menggunakan join ke tabel hybridfill
-        // Mengambil film dengan hybridfill.score antara 4 dan 7 untuk user yang sedang login
-        $userId = Auth::id();
-        $newForYou = DB::table('films')
-            ->join('hybridfill', 'films.id', '=', 'hybridfill.film_id')
-            ->where('hybridfill.user_id', $userId)
-            ->whereBetween('hybridfill.score', [4, 7])
-            ->select('films.*', 'hybridfill.score')
-            ->orderBy('hybridfill.score', 'DESC')
-            ->take(5)
-            ->get();
-    
+
+        // Optimize New For You query with specific columns
+        $newForYou = Auth::check() ? 
+            DB::table('films')
+              ->join('hybridfill', 'films.id', '=', 'hybridfill.film_id')
+              ->where('hybridfill.user_id', Auth::id())
+              ->whereBetween('hybridfill.score', [4, 7])
+              ->select('films.id', 'films.title', 'films.gambar', 'hybridfill.score')
+              ->orderBy('hybridfill.score', 'DESC')
+              ->take(5)
+              ->get() : 
+            collect();
+
         return view('dashboard', compact('topPicks', 'recommendations', 'newForYou'));
     }
     
@@ -74,32 +82,29 @@ public function topPicks()
         }
     
         try {
-            // Query SQL untuk mengambil film dengan skor dari hybridfill dan mengurutkan dari terbesar ke terkecil
+            // Optimize query by selecting specific columns and using index
             $recommendedFilms = DB::table('films')
                 ->join('hybridfill', 'films.id', '=', 'hybridfill.film_id')
                 ->where('hybridfill.user_id', $userId)
                 ->whereBetween('hybridfill.score', [4, 7])
-                ->select('films.*', 'hybridfill.score')
-                ->orderBy('hybridfill.score', 'DESC') // Mengurutkan dari terbesar ke terkecil
+                ->select('films.id', 'films.title', 'films.gambar', 'films.genre', 
+                        'films.description', 'hybridfill.score')
+                ->orderBy('hybridfill.score', 'DESC')
                 ->get();
     
-            // Debugging: Log hasil query
-            Log::info("Films retrieved for user {$userId}", ['films' => $recommendedFilms]);
-    
-            // Jika tidak ada rekomendasi dalam range, tampilkan pesan yang lebih informatif
             if ($recommendedFilms->isEmpty()) {
                 return view('films.newforyou', [
                     'recommendedFilms' => collect(),
                     'hybridScores' => [],
                     'userRatings' => UserRating::where('user_id', $userId)->count(),
-                    'error' => 'No films found with scores between 4 and 7.',
+                    'error' => 'No films found with scores between 4 and 7.'
                 ]);
             }
     
             return view('films.newforyou', [
                 'recommendedFilms' => $recommendedFilms,
                 'hybridScores' => $recommendedFilms->pluck('score', 'id'),
-                'userRatings' => UserRating::where('user_id', $userId)->count(),
+                'userRatings' => UserRating::where('user_id', $userId)->count()
             ]);
     
         } catch (\Exception $e) {
@@ -211,6 +216,7 @@ public function topPicks()
 {
     $query = Film::query();
 
+    // Search in title, description, and synopsis
     if ($request->has('search')) {
         $query->where(function ($q) use ($request) {
             $q->where('title', 'like', '%' . $request->input('search') . '%')
@@ -219,26 +225,50 @@ public function topPicks()
         });
     }
 
-    if ($request->has('genre') && !empty($request->input('genre'))) {
-        $genre = $request->input('genre');
-        $query->whereRaw("FIND_IN_SET(?, genre)", [$genre]);
+    // Handle genre filtering with AND logic
+    if ($request->filled('genre1') && $request->filled('genre2')) {
+        $genre1 = trim($request->genre1);
+        $genre2 = trim($request->genre2);
+        
+        $query->where(function($q) use ($genre1, $genre2) {
+            $q->where('genre', 'LIKE', "%{$genre1}%")
+              ->where('genre', 'LIKE', "%{$genre2}%");
+        });
+    } elseif ($request->filled('genre1')) {
+        $query->where('genre', 'LIKE', "%{$request->genre1}%");
+    } elseif ($request->filled('genre2')) {
+        $query->where('genre', 'LIKE', "%{$request->genre2}%");
     }
 
+    // Sort by update date
     if ($request->has('sort_by_update')) {
         $query->orderBy('updated_at', $request->input('sort_by_update') == 'desc' ? 'desc' : 'asc');
     }
 
+    // Sort by rating
     if ($request->has('sort_by_rating')) {
         $query->orderBy('rating', $request->input('sort_by_rating') == 'desc' ? 'desc' : 'asc');
     }
 
+    // Sort by hybrid rating
+    if ($request->has('sort_by_hybrid') && Auth::check()) {
+        $userId = Auth::id();
+        $query->leftJoin('hybridfill', function($join) use ($userId) {
+            $join->on('films.id', '=', 'hybridfill.film_id')
+                 ->where('hybridfill.user_id', '=', $userId);
+        })
+        ->orderBy('hybridfill.score', $request->input('sort_by_hybrid') == 'desc' ? 'desc' : 'asc')
+        ->select('films.*');
+    }
+
+    // Sort by genre
     if ($request->has('sort_by_genre')) {
         $query->orderBy('genre', $request->input('sort_by_genre') == 'desc' ? 'desc' : 'asc');
     }
 
-    $films = $query->paginate(14);
+    $films = $query->paginate(12);
 
-    // Mengambil semua genre, memisahkan, dan menghilangkan duplikasi
+    // Get unique genres
     $allGenres = Film::pluck('genre')->toArray();
     $genres = [];
 
@@ -246,13 +276,13 @@ public function topPicks()
         $separatedGenres = explode(',', $genreString);
         foreach ($separatedGenres as $genre) {
             $trimmedGenre = trim($genre);
-            if (!in_array($trimmedGenre, $genres)) {
+            if (!empty($trimmedGenre) && !in_array($trimmedGenre, $genres)) {
                 $genres[] = $trimmedGenre;
             }
         }
     }
 
-    sort($genres); // Urutkan genre secara alfabetis
+    sort($genres); // Sort genres alphabetically
 
     return view('films.advance-search', compact('films', 'genres'));
 }

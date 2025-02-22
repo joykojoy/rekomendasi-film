@@ -1,0 +1,25 @@
+/* Sidebar Styles */
+#sidebar {
+    z-index: 40;
+}
+
+@media (max-width: 768px) {
+    #sidebar {
+        transform: translateX(-100%);
+    }
+    
+    #sidebar.active {
+        transform: translateX(0);
+    }
+}
+
+/* Main Content Styles */
+.main-content {
+    transition: margin-left 0.3s ease-in-out;
+}
+
+@media (min-width: 768px) {
+    .main-content {
+        margin-left: 16rem;
+    }
+}

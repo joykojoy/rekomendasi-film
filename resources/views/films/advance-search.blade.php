@@ -1,6 +1,9 @@
+@extends('layout')
+
+@section('content')
 <link rel="stylesheet" href="{{ asset('css/advance-search.css') }}">
 
-<div class="advance-search-page">
+<div class="advance-search-page bg-dark"> <!-- Added bg-dark class -->
     <!-- Tombol Back -->
     <button class="back-button" onclick="history.back()">&#x21A9;</button>
     
@@ -22,46 +25,70 @@
                         value="{{ request('search') }}">
                 </div>
 
-                <!-- Filter Group: Ditampilkan dalam satu baris -->
+                <!-- Filter Group -->
                 <div class="filter-group">
-                    <!-- Filter by Genre -->
-                    <div class="form-group">
-                        <label for="genre">Filter by Genre</label>
-                        <select id="genre" name="genre">
-                            <option value="">Pilih Genre</option>
-                            @foreach ($genres as $genre)
-                                <option value="{{ $genre }}" {{ request('genre') == $genre ? 'selected' : '' }}>
-                                    {{ $genre }}
-                                </option>
-                            @endforeach
-                        </select>
+                    <!-- Genre Related Filters -->
+                    <div class="genre-filters">
+                        <!-- Primary Genre -->
+                        <div class="form-group">
+                            <label for="genre1">Primary Genre</label>
+                            <select id="genre1" name="genre1">
+                                <option value="">Select Genre</option>
+                                @foreach ($genres as $genre)
+                                    <option value="{{ $genre }}" {{ request('genre1') == $genre ? 'selected' : '' }}>
+                                        {{ $genre }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <!-- Secondary Genre -->
+                        <div class="form-group">
+                            <label for="genre2">Secondary Genre</label>
+                            <select id="genre2" name="genre2">
+                                <option value="">Select Genre</option>
+                                @foreach ($genres as $genre)
+                                    <option value="{{ $genre }}" {{ request('genre2') == $genre ? 'selected' : '' }}>
+                                        {{ $genre }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
                     </div>
-                    <!-- Sort by Update -->
-                    <div class="form-group">
-                        <label for="sort_by_update">Sort by update</label>
-                        <select id="sort_by_update" name="sort_by_update">
-                            <option value="">Pilih</option>
-                            <option value="desc" {{ request('sort_by_update') == 'desc' ? 'selected' : '' }}>Terbaru</option>
-                            <option value="asc" {{ request('sort_by_update') == 'asc' ? 'selected' : '' }}>Terlama</option>
-                        </select>
-                    </div>
-                    <!-- Sort by Rating -->
-                    <div class="form-group">
-                        <label for="sort_by_rating">Sort by rating</label>
-                        <select id="sort_by_rating" name="sort_by_rating">
-                            <option value="">Pilih</option>
-                            <option value="desc" {{ request('sort_by_rating') == 'desc' ? 'selected' : '' }}>Tertinggi</option>
-                            <option value="asc" {{ request('sort_by_rating') == 'asc' ? 'selected' : '' }}>Terendah</option>
-                        </select>
-                    </div>
-                    <!-- Sort by Genre -->
-                    <div class="form-group">
-                        <label for="sort_by_genre">Sort by Genre</label>
-                        <select id="sort_by_genre" name="sort_by_genre">
-                            <option value="">Pilih</option>
-                            <option value="asc" {{ request('sort_by_genre') == 'asc' ? 'selected' : '' }}>A-Z</option>
-                            <option value="desc" {{ request('sort_by_genre') == 'desc' ? 'selected' : '' }}>Z-A</option>
-                        </select>
+
+                    <!-- Sort Options -->
+                    <div class="sort-options">
+                        <div class="sort-group">
+                            <!-- Update Sort -->
+                            <div class="form-group">
+                                <label for="sort_by_update">Update</label>
+                                <select id="sort_by_update" name="sort_by_update" class="sort-select">
+                                    <option value="">Select Order</option>
+                                    <option value="desc" {{ request('sort_by_update') == 'desc' ? 'selected' : '' }}>Newest First</option>
+                                    <option value="asc" {{ request('sort_by_update') == 'asc' ? 'selected' : '' }}>Oldest First</option>
+                                </select>
+                            </div>
+
+                            <!-- Rating Sort -->
+                            <div class="form-group">
+                                <label for="sort_by_rating">Rating</label>
+                                <select id="sort_by_rating" name="sort_by_rating" class="sort-select">
+                                    <option value="">Select Order</option>
+                                    <option value="desc" {{ request('sort_by_rating') == 'desc' ? 'selected' : '' }}>Highest First</option>
+                                    <option value="asc" {{ request('sort_by_rating') == 'asc' ? 'selected' : '' }}>Lowest First</option>
+                                </select>
+                            </div>
+
+                            <!-- Hybrid Rating Sort -->
+                            <div class="form-group">
+                                <label for="sort_by_hybrid">Hybrid Rating</label>
+                                <select id="sort_by_hybrid" name="sort_by_hybrid" class="sort-select">
+                                    <option value="">Select Order</option>
+                                    <option value="desc" {{ request('sort_by_hybrid') == 'desc' ? 'selected' : '' }}>Highest First</option>
+                                    <option value="asc" {{ request('sort_by_hybrid') == 'asc' ? 'selected' : '' }}>Lowest First</option>
+                                </select>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -92,18 +119,42 @@
             <!-- Custom Pagination -->
             @if ($films->hasPages())
                 <div class="search-pagination">
+                    <!-- Previous Page Link -->
                     @if (!$films->onFirstPage())
                         <a class="pagination-link" href="{{ $films->previousPageUrl() }}">«</a>
                     @endif
 
-                    @foreach ($films->getUrlRange(1, $films->lastPage()) as $page => $url)
-                        @if ($page == $films->currentPage())
-                            <span class="pagination-link active">{{ $page }}</span>
-                        @else
-                            <a class="pagination-link" href="{{ $url }}">{{ $page }}</a>
-                        @endif
-                    @endforeach
+                    @php
+                        $start = max($films->currentPage() - 5, 1);
+                        $end = min($films->currentPage() + 5, $films->lastPage());
+                    @endphp
 
+                    <!-- Show First Page if not in range -->
+                    @if($start > 1)
+                        <a class="pagination-link" href="{{ $films->url(1) }}">1</a>
+                        @if($start > 2)
+                            <span class="pagination-ellipsis">...</span>
+                        @endif
+                    @endif
+
+                    <!-- Page Links -->
+                    @for($i = $start; $i <= $end; $i++)
+                        @if($i == $films->currentPage())
+                            <span class="pagination-link active">{{ $i }}</span>
+                        @else
+                            <a class="pagination-link" href="{{ $films->url($i) }}">{{ $i }}</a>
+                        @endif
+                    @endfor
+
+                    <!-- Show Last Page if not in range -->
+                    @if($end < $films->lastPage())
+                        @if($end < $films->lastPage() - 1)
+                            <span class="pagination-ellipsis">...</span>
+                        @endif
+                        <a class="pagination-link" href="{{ $films->url($films->lastPage()) }}">{{ $films->lastPage() }}</a>
+                    @endif
+
+                    <!-- Next Page Link -->
                     @if ($films->hasMorePages())
                         <a class="pagination-link" href="{{ $films->nextPageUrl() }}">»</a>
                     @endif
@@ -114,14 +165,48 @@
         @endif
     </section>
 </div>
+@endsection
 
 <style>
+    /* Reset default margin dan padding */
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    body {
+        background-color: #212529;
+        min-height: 100vh;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+    }
+
+    .advance-search-page {
+        background-color: #212529;
+        min-height: 100vh;
+        width: 100%;
+        margin: 0;  /* Hapus margin default */
+        padding: 20px;  /* Tambah padding untuk konten */
+        overflow-x: hidden;  /* Mencegah scroll horizontal */
+    }
+
+    .search-container {
+        background-color: #343a40;
+        width: 100%;
+        max-width: 1200px;  /* Atau sesuai kebutuhan */
+        margin: 0 auto;
+        padding: 20px;
+        border-radius: 8px;
+    }
+
     .back-button {
         position: absolute;
         top: 20px;
         left: 20px;
-        background: #d3d3d3; /* abu-abu cerah */
-        color: #333;
+        background: #343a40; /* Changed to dark theme color */
+        color: #ffc107; /* Changed to yellow for visibility */
         border: none;
         font-size: 24px;
         padding: 8px 12px;
@@ -131,6 +216,54 @@
     }
 
     .back-button:hover {
-        background: #c0c0c0;
+        background: #495057; /* Slightly lighter dark on hover */
+    }
+
+    /* Add background color for the page */
+    .advance-search-page {
+        background-color: #212529; /* Dark background */
+        min-height: 100vh;
+    }
+
+    /* Add background for search container */
+    .search-container {
+        background-color: #343a40;
+    }
+
+    /* Add background for search result cards */
+    .search-result-card {
+        background-color: #343a40;
     }
 </style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const genre1Select = document.getElementById('genre1');
+    const genre2Select = document.getElementById('genre2');
+
+    function updateGenreOptions() {
+        const genre1Value = genre1Select.value;
+        const genre2Value = genre2Select.value;
+
+        // Enable all options first
+        Array.from(genre1Select.options).forEach(opt => opt.disabled = false);
+        Array.from(genre2Select.options).forEach(opt => opt.disabled = false);
+
+        // Disable selected options in the other select
+        if (genre1Value) {
+            const option = genre2Select.querySelector(`option[value="${genre1Value}"]`);
+            if (option) option.disabled = true;
+        }
+        if (genre2Value) {
+            const option = genre1Select.querySelector(`option[value="${genre2Value}"]`);
+            if (option) option.disabled = true;
+        }
+    }
+
+    genre1Select.addEventListener('change', updateGenreOptions);
+    genre2Select.addEventListener('change', updateGenreOptions);
+    
+    // Initial setup
+    updateGenreOptions();
+});
+</script>

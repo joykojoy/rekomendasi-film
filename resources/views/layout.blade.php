@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@yield('title', 'Film CRUD')</title>
+    <title>@yield('title', 'CineMatch')</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="{{ asset('css/custom.css') }}" rel="stylesheet">
 
@@ -19,29 +19,31 @@
             padding-top: 20px;
             height: 100vh;
             overflow-y: auto;
-            transform: translateX(-200px);
+            transform: translateX(-200px); /* Changed to -200px to hide completely */
             transition: transform 0.3s ease;
             z-index: 1000;
         }
 
+        .sidebar:hover,
         .sidebar.show {
             transform: translateX(0);
         }
 
-        .sidebar ul {
-            list-style-type: none;
-            padding-left: 0;
+        /* Adjust trigger area */
+        .sidebar-trigger {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 10px; /* Reduced width */
+            height: 100vh;
+            z-index: 999;
         }
 
-        .sidebar ul li {
-            margin-bottom: 10px;
-        }
-
-        /* Main content area */
+        /* Update main content */
         .main-content {
-            margin-left: 0;
+            margin-left: 10px; /* Reduced margin */
             padding: 20px;
-            width: 100%;
+            width: calc(100% - 10px);
             transition: margin-left 0.3s ease;
         }
 
@@ -80,11 +82,13 @@
 <div class="d-flex flex-column">
     <!-- Navbar -->
     <div class="navbar">
-        <button id="menuToggle" class="btn btn-outline-light btn-sm">Menu</button>
-        <h3>Film CRUD</h3>
+        <h3>CineMatch</h3>
     </div>
 
     <div class="d-flex">
+        <!-- Add the trigger area before the sidebar -->
+        <div class="sidebar-trigger" id="sidebarTrigger"></div>
+
         <!-- Sidebar -->
         <nav class="sidebar" id="sidebar">
             <ul class="nav flex-column">
@@ -141,8 +145,6 @@
 
         <!-- Main Content -->
         <div class="main-content" id="mainContent">
-            <h1 class="mb-4">@yield('header', 'Welcome to Film CRUD')</h1>
-
             <!-- Content Area -->
             @yield('content')
         </div>
@@ -150,14 +152,32 @@
 </div>
 
 <script>
-    document.getElementById('menuToggle').addEventListener('click', function () {
-        const sidebar = document.getElementById('sidebar');
-        const mainContent = document.getElementById('mainContent');
+    console.log("Sidebar script loaded");
+
+    const sidebar = document.getElementById('sidebar');
+    const mainContent = document.getElementById('mainContent');
+    const sidebarTrigger = document.getElementById('sidebarTrigger');
+    const menuToggle = document.getElementById('menuToggle');
+
+    // Handle hover events
+    sidebarTrigger.addEventListener('mouseenter', () => {
+        sidebar.classList.add('show');
+        mainContent.classList.add('shifted');
+    });
+
+    sidebar.addEventListener('mouseleave', () => {
+        sidebar.classList.remove('show');
+        mainContent.classList.remove('shifted');
+    });
+
+    // Keep the existing click handler for the menu button
+    menuToggle.addEventListener('click', function () {
         sidebar.classList.toggle('show');
         mainContent.classList.toggle('shifted');
     });
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="{{ asset('js/advance-search.js') }}"></script>
 </body>
 </html>

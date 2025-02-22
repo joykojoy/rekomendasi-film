@@ -16,7 +16,7 @@
         <!-- Session Status -->
         <x-auth-session-status class="mb-4" :status="session('status')" />
 
-        <h1 class="text-2xl font-bold text-gray-800 dark:text-gray-300 text-center mb-6">Log in</h1>
+        <h1 class="text-2xl font-bold text-gray-800 dark:text-gray-300 text-center mb-6">CineMatch</h1>
         <form method="POST" action="{{ route('login') }}" class="space-y-4">
             @csrf
             <!-- Email Address -->
